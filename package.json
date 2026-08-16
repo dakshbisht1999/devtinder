@@ -1,0 +1,19 @@
+{
+  "name": "devtinder-be",
+  "version": "1.0.0",
+  "description": "tinder for devs, BE in nodejs with expressjs and mongodb",
+  "license": "ISC",
+  "author": "Dishant Bisht",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
