@@ -2,11 +2,16 @@
 
 const express = require("express");
 const {adminAuth, userAuth} = require("./src/middlewares/auth")
-const {connectDB} = require("./src/config/database");
+const {connectDB, mainDB, adminDB} = require("./src/config/database");
 
 const app = express();
 
-connectDB().then(()=>{
+//To connect single db only
+// connectDB().then(()=>{
+
+//To connect multiple dbs
+Promise.all([mainDB.asPromise(), adminDB.asPromise()])
+.then(()=>{
     console.log("Database connection established.")
     
     app.use("/admin", adminAuth);

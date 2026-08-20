@@ -8,18 +8,18 @@ const connectDB = async () => {
     );
 }
 
-// // 1. Create Connection A
-// const mainDB = mongoose.createConnection(process.env.MONGO_URI_DEVTINDER);
+// 1. Create Connection A
+const mainDB = mongoose.createConnection(process.env.MONGO_URI_DEVTINDER);
 
-// mainDB.on("connected", () => {
-//     console.log("Main App Database connected successfully.");
-// });
+mainDB.on("connected", () => {
+    console.log("Main App Database connected successfully.");
+});
 
-// // 2. Create Connection B
-// const adminDB = mongoose.createConnection(process.env.MONGO_URI_ADMIN);
+// 2. Create Connection B
+const adminDB = mongoose.createConnection(process.env.MONGO_URI_ADMIN);
 
-// adminDB.on("connected", () => {
-//     console.log("Admin Database connected successfully.");
-// });
+adminDB.on("connected", () => {
+    console.log("Admin Database connected successfully.");
+});
 
-module.exports = {connectDB}
+module.exports = {connectDB, mainDB, adminDB}
