@@ -1,30 +1,49 @@
 // console.log("Hello, World!");
 
 const express = require("express");
+const {adminAuth, userAuth} = require("./middlewares/auth")
 
 const app = express();
 
-app.use("/user",
-    (req,res, next)=>{
-        console.log("Handling route 1");
-        next();
-        // res.send("Res1");
-    },
-    (req,res, next)=>{
-        console.log("Handling route 2");
-        next();
-        // res.send("Res2");
-    },
-    (req,res, next)=>{
-        console.log("Handling route 3");
-        next();
-        // res.send("Res3");
-    },
-    (req,res)=>{
-        console.log("Handling route 4");
-        // res.send("Res4");
-    }
-);
+app.use("/admin", adminAuth);
+
+app.get("/admin/getAllAdmins",(req,res)=>{
+    console.log("getAllAdmins function called");
+    res.send("list of all the admins")
+});
+
+app.delete("/admin/deleteAdmin",(req,res)=>{
+    console.log("deleteAdmin function called");
+    res.send("deleted the admin successfully")
+});
+
+
+app.post("/user/login", (req,res)=>{
+    console.log("user login api called");
+    res.send({
+        message: "user logged in successfully",
+        token: "userBearerToken"
+    })
+})
+
+app.use("/user", userAuth);
+
+
+
+app.get("/user/profile", (req,res)=>{
+    console.log("user profile api called")
+    res.send("fetch user profile data")
+});
+
+app.get("/user/settings", (req,res)=>{
+    console.log("user settings api called")
+    res.send("fetch user settings")
+});
+
+app.delete("/user/delete", (req,res)=>{
+    console.log("user delete api called")
+    res.send("deleted the user successfully")
+});
 
 
 app.listen(7777,()=>{
