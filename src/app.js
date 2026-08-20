@@ -28,8 +28,6 @@ app.post("/user/login", (req,res)=>{
 
 app.use("/user", userAuth);
 
-
-
 app.get("/user/profile", (req,res)=>{
     console.log("user profile api called")
     res.send("fetch user profile data")
