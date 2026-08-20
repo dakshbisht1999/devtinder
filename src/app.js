@@ -20,6 +20,7 @@ app.delete("/admin/deleteAdmin",(req,res)=>{
 
 app.post("/user/login", (req,res)=>{
     console.log("user login api called");
+    throw new Error("DB Server Down")
     res.send({
         message: "user logged in successfully",
         token: "userBearerToken"
@@ -43,6 +44,13 @@ app.delete("/user/delete", (req,res)=>{
     res.send("deleted the user successfully")
 });
 
+
+//Global Error Handler
+app.use((err,req,res,next)=>{
+    if(err){
+        res.status(500).send("Something Went Wrong");
+    }
+});
 
 app.listen(7777,()=>{
     console.log("Server running on port:7777");
