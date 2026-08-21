@@ -27,11 +27,11 @@ const userSchema = mongoose.Schema({
         min: 18,
         max: 100
     },
-    roles: {
-        type: [String],
-        enum: ['user', 'editor', 'admin'],
-        default: ['user']
-    }
+    // roles: {
+    //     type: [String],
+    //     enum: ['user', 'editor', 'admin'],
+    //     default: ['user']
+    // }
 });
 
 // here we attach userSchema to the Collection of Database

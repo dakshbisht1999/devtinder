@@ -4,7 +4,8 @@ const express = require("express");
 const {adminAuth, userAuth} = require("./src/middlewares/auth")
 const {connectDB} = require("./src/config/database");
 const { UserModel } = require("./src/models/user");
-const {AppError} = require("./src/utils/AppError")
+const {AppError} = require("./src/utils/AppError");
+const req = require("express/lib/request");
 
 const app = express();
 
@@ -25,7 +26,7 @@ connectDB()
     app.use(express.urlencoded({ extended: true }));
 
 
-
+    // SignUp API
     app.post("/signup",async(req,res,next)=>{
         try{
             const { firstName, lastName, emailId, password, age } = req.body;
@@ -74,7 +75,7 @@ connectDB()
         }
     })
 
-    // Feed API
+    // Feed API - Get /feed - get all users from the database
     app.get("/feed", async(req,res,next)=>{
         try{
             const users = await UserModel.find({})
@@ -131,6 +132,19 @@ connectDB()
             // logged in user cannot see his/her user details in the feed
             res.send(user);
         } catch (error) {
+            next(error);
+        }
+    })
+
+    // Delete User API
+    app.delete("/user", async(req,res,next)=>{
+        const userId = req.body.userId;
+        try{
+            const user = await UserModel.findByIdAndDelete(userId);
+            if(!user) throw new AppError("Enter valid userId",400)
+            
+            res.send("User deleted successfully");
+        } catch (error){
             next(error);
         }
     })
