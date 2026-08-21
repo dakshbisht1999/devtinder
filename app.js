@@ -28,10 +28,10 @@ connectDB()
 
     app.post("/signup",async(req,res,next)=>{
         try{
-            const { firstName, lastName, emailId, password } = req.body;
+            const { firstName, lastName, emailId, password, age } = req.body;
             
             // CASE 1: Basic Validation Error
-            if (!firstName || !emailId || !password) {
+            if (!firstName || !emailId || !password || !age) {
                 // const err = new Error("Please provide all required fields");
                 // err.statusCode = 400;
                 // throw err;
@@ -53,7 +53,7 @@ connectDB()
             // Agar upar ki saari conditions paas ho gayi, matlab data ekdum sahi hai
             // Ab hum user ko save karenge
             const user = new UserModel({
-                firstName, lastName, emailId, password
+                firstName, lastName, emailId, password, age
             })
             await user.save(); // save in database collection
 
@@ -63,7 +63,7 @@ connectDB()
             // 201 status ka matlab hota hai "Created Successfully"
             res.status(201).send({
                 message: "User signed up successfully",
-                data: { firstName, lastName, emailId, userId }
+                data: { firstName, lastName, emailId, age, userId }
             });
         } catch(error){
             // res.status(400).send("Error saving the user: ", error);
