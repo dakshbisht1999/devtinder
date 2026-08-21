@@ -2,17 +2,77 @@
 
 const express = require("express");
 const {adminAuth, userAuth} = require("./src/middlewares/auth")
-const {connectDB, mainDB, adminDB} = require("./src/config/database");
+const {connectDB} = require("./src/config/database");
+const { UserModel } = require("./src/models/user");
+const {AppError} = require("./src/utils/AppError")
 
 const app = express();
 
 //To connect single db only
-// connectDB().then(()=>{
+connectDB()
 
 //To connect multiple dbs
-Promise.all([mainDB.asPromise(), adminDB.asPromise()])
+// Promise.all([mainDB.asPromise(), adminDB.asPromise()])
+
 .then(()=>{
     console.log("Database connection established.")
+    // Ye line add karni hai routes se upar!
+    // Ye Postman se aane wale JSON data ko read karke req.body mein daal deti hai
+    // Raw JSON ko parse karega
+    app.use(express.json()); 
+
+    // x-www-form-urlencoded ko parse karega
+    app.use(express.urlencoded({ extended: true }));
+
+
+
+    app.post("/signup",async(req,res,next)=>{
+        try{
+            const { firstName, lastName, emailId, password } = req.body;
+            
+            // CASE 1: Basic Validation Error
+            if (!firstName || !emailId || !password) {
+                // const err = new Error("Please provide all required fields");
+                // err.statusCode = 400;
+                // throw err;
+
+                throw new AppError("Please provide all required fields", 400);
+            }
+
+            // CASE 2: Business Logic Error (Password length)
+            if (password.length < 8) {
+                throw new AppError("Password must be at least 8 characters long", 400);
+            }
+
+            // CASE 3: Duplicacy Check (Kya email pehle se database mein hai?)
+            const existingUser = await UserModel.findOne({ emailId: emailId });
+            if (existingUser) {
+                throw new AppError("This email is already registered. Please signup via different email.", 400);
+            }
+
+            // Agar upar ki saari conditions paas ho gayi, matlab data ekdum sahi hai
+            // Ab hum user ko save karenge
+            const user = new UserModel({
+                firstName, lastName, emailId, password
+            })
+            await user.save(); // save in database collection
+
+            const userDocument = await UserModel.findOne({emailId: emailId}); //returns document/json object
+            const userId = userDocument._id.toString(); //need to convert _id into string using .toString();
+            console.log(userId);
+            // 201 status ka matlab hota hai "Created Successfully"
+            res.status(201).send({
+                message: "User signed up successfully",
+                data: { firstName, lastName, emailId, userId }
+            });
+        } catch(error){
+            // res.status(400).send("Error saving the user: ", error);
+            
+            // Agar upar wale throw chalenge, ya database crash hoga, 
+            // toh wo sab yahan aayenge aur Global Handler ke paas chale jayenge
+            next(error);
+        }
+    })
     
     app.use("/admin", adminAuth);
 
@@ -61,9 +121,18 @@ Promise.all([mainDB.asPromise(), adminDB.asPromise()])
 
     //Global Error Handler
     app.use((err,req,res,next)=>{
-        if(err){
-            res.status(500).send("Something Went Wrong");
-        }
+        // if(err){
+        //     res.status(500).send("Something Went Wrong");
+        // }
+
+        // err.statusCode and err.message from coming from the AppError.js
+        const statusCode = err.statusCode || 500;
+        const errorMessage = err.message || "Internal Server Error";
+
+        res.status(statusCode).send({
+            message: errorMessage,
+            success: false
+        })
     });
 
     app.listen(7777,()=>{
