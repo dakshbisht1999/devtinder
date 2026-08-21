@@ -73,6 +73,22 @@ connectDB()
             next(error);
         }
     })
+
+    // Feed API
+    app.get("/feed", async(req,res,next)=>{
+        try{
+            const users = await UserModel.find({})
+            if(users.length === 0){
+                throw new AppError("No users found",404);
+            }
+
+            // we can add multiple business logics like
+            // logged in user cannot see his/her user details in the feed
+            res.send(users);
+        } catch (error) {
+            next(error);
+        }
+    })
     
     app.use("/admin", adminAuth);
 
@@ -102,6 +118,22 @@ connectDB()
     })
 
     app.use("/user", userAuth);
+
+    // Get user by email
+    app.get("/user", async(req,res,next)=>{
+        try{
+            const user = await UserModel.findOne({emailId: req.query.emailId})
+            if(!user){
+                throw new AppError("User not found",404);
+            }
+
+            // we can add multiple business logics like
+            // logged in user cannot see his/her user details in the feed
+            res.send(user);
+        } catch (error) {
+            next(error);
+        }
+    })
 
     app.get("/user/profile", (req,res)=>{
         console.log("user profile api called")
