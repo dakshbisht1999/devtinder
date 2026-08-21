@@ -161,14 +161,16 @@ connectDB()
             if(userId){
                 // const user = await UserModel.findByIdAndUpdate({_id: userId}, data);
                 const user = await UserModel.findByIdAndUpdate(userId, data);
-                if(!user) throw new AppError("Enter valid userId",400)
+                if(!user) throw new AppError("Enter valid userId",400);
                 
-                res.send("User updated successfully");
-            } else {
+                res.send("User updated successfully via userId");
+            } else if (!userId && emailId) {
                 const user = await UserModel.findOneAndUpdate({emailId: emailId}, data);
-                if(!user) throw new AppError("Enter valid emailId",400)
+                if(!user) throw new AppError("Enter valid emailId",400);
                 
                 res.send("User updated successfully via email");
+            } else {
+                throw new AppError("Enter either userId or emailId to update the user.", 400);
             }
         } catch (error){
             next(error);
