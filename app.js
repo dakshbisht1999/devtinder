@@ -85,6 +85,8 @@ connectDB()
 
             // we can add multiple business logics like
             // logged in user cannot see his/her user details in the feed
+            // also use pagination/scroll feature in the api
+            // in case of more than 100 records/documents in the db
             res.send(users);
         } catch (error) {
             next(error);
@@ -134,7 +136,7 @@ connectDB()
         } catch (error) {
             next(error);
         }
-    })
+    });
 
     // Delete User API
     app.delete("/user", async(req,res,next)=>{
@@ -147,7 +149,23 @@ connectDB()
         } catch (error){
             next(error);
         }
-    })
+    });
+
+    // PUT (Total Replacement) vs PATCH (Partial Update)
+    // Patch User API - update data of the user
+    app.patch("/user", async(req,res,next)=>{
+        const userId = req.body.userId;
+        const data = req.body;
+        try{
+            // const user = await UserModel.findByIdAndUpdate({_id: userId}, data);
+            const user = await UserModel.findByIdAndUpdate(userId, data);
+            if(!user) throw new AppError("Enter valid userId",400)
+            
+            res.send("User updated successfully");
+        } catch (error){
+            next(error);
+        }
+    });
 
     app.get("/user/profile", (req,res)=>{
         console.log("user profile api called")
