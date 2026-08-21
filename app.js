@@ -155,13 +155,21 @@ connectDB()
     // Patch User API - update data of the user
     app.patch("/user", async(req,res,next)=>{
         const userId = req.body.userId;
+        const emailId = req.body.emailId;
         const data = req.body;
         try{
-            // const user = await UserModel.findByIdAndUpdate({_id: userId}, data);
-            const user = await UserModel.findByIdAndUpdate(userId, data);
-            if(!user) throw new AppError("Enter valid userId",400)
-            
-            res.send("User updated successfully");
+            if(userId){
+                // const user = await UserModel.findByIdAndUpdate({_id: userId}, data);
+                const user = await UserModel.findByIdAndUpdate(userId, data);
+                if(!user) throw new AppError("Enter valid userId",400)
+                
+                res.send("User updated successfully");
+            } else {
+                const user = await UserModel.findOneAndUpdate({emailId: emailId}, data);
+                if(!user) throw new AppError("Enter valid emailId",400)
+                
+                res.send("User updated successfully via email");
+            }
         } catch (error){
             next(error);
         }
