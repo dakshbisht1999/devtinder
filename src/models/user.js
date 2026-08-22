@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const { AppError } = require("../utils/AppError");
 // const {Schema} = mongoose;
+const validator = require("validator");
 
 const userSchema = mongoose.Schema({
     firstName:{
@@ -21,11 +22,21 @@ const userSchema = mongoose.Schema({
         unique: true,
         lowercase: true,
         trim: true,
-        immutable: true
+        immutable: true,
+        validate(value){
+            if(!validator.isEmail(value)){
+                throw new AppError("Invalid email address: " + value,400)
+            }
+        }
     },
     password:{
         type: String,
-        required: true
+        required: true,
+        validate(value){
+            if(!validator.isStrongPassword(value)){
+                throw new AppError("Password is not strong: " + value,400)
+            }
+        }
     },
     gender:{
         type: String,
@@ -50,7 +61,12 @@ const userSchema = mongoose.Schema({
     },
     photoUrl:{
         type: String,
-        default: "https://geographyandyou.com/images/user-profile.png"
+        default: "https://geographyandyou.com/images/user-profile.png",
+        validate(value){
+            if(!validator.isURL(value)){
+                throw new AppError("Invalid photo url: " + value,400)
+            }
+        }
     },
     about:{
         type: String,

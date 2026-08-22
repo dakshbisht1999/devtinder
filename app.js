@@ -204,7 +204,24 @@ connectDB()
         //     res.status(500).send("Something Went Wrong");
         // }
 
+        // 1. Agar ye Mongoose ka Validation Error hai
+        if (err.name === "ValidationError") {
+            err.statusCode = 400; // Hum khud yahan 400 set kar denge
+            
+            // Bonus: Mongoose ke lambe message ("user validation failed...") ko clean karna
+            const messages = Object.values(err.errors).map(val => val.message);
+            err.message = messages.join(", "); 
+        }
+
+        // // 2. Agar ye duplicate key (email already exists) ka error hai
+        // if (err.code === 11000) {
+        //     err.statusCode = 400;
+        //     err.message = "This email is already registered!";
+        // }
+
         // err.statusCode and err.message from coming from the AppError.js
+        console.log("custom errorStatusCode", err.statusCode);
+        console.log("custom errorMessage", err.message);
         const statusCode = err.statusCode || 500;
         const errorMessage = err.message || "Internal Server Error";
 
