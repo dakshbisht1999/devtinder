@@ -5,7 +5,7 @@ const {adminAuth, userAuth} = require("./src/middlewares/auth")
 const {connectDB} = require("./src/config/database");
 const { UserModel } = require("./src/models/user");
 const {AppError} = require("./src/utils/AppError");
-const {validateSignupData} = require("./src/utils/validation");
+const {validateSignupData, validateLoginData} = require("./src/utils/validation");
 const bcrypt = require("bcrypt");
 
 const app = express();
@@ -107,12 +107,29 @@ connectDB()
 
     app.post("/user/login", async (req,res,next)=>{
         try{
-            console.log("user login api called");
-            throw new Error("DB Server Down")
-            res.send({
-                message: "user logged in successfully",
-                token: "userBearerToken"
-            })
+            // console.log("user login api called");
+            // throw new Error("DB Server Down")
+
+            const user = await validateLoginData(req);
+            // console.log("user in api", user);
+
+            // compare hashPassword with plainPassword
+            const isPasswordMatch = await bcrypt.compare(req.body.password, user.password)
+            // console.log("isPasswordMatch", isPasswordMatch)
+
+            if(isPasswordMatch){
+                const userData = user.toObject();
+                delete userData.password;
+                // console.log("after delete", userData)
+                res.send({
+                    message: "user logged in successfully",
+                    token: "userBearerToken",
+                    success: true,
+                    data: userData
+                })
+            }else{
+                throw new AppError("Invalid Credentials!!", 400)
+            }
         } catch(error){
             next(error);
         }
