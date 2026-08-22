@@ -5,7 +5,8 @@ const {adminAuth, userAuth} = require("./src/middlewares/auth")
 const {connectDB} = require("./src/config/database");
 const { UserModel } = require("./src/models/user");
 const {AppError} = require("./src/utils/AppError");
-const req = require("express/lib/request");
+const {validateSignupData} = require("./src/utils/validation");
+const bcrypt = require("bcrypt");
 
 const app = express();
 
@@ -29,42 +30,40 @@ connectDB()
     // SignUp API
     app.post("/signup",async(req,res,next)=>{
         try{
-            const { firstName, lastName, emailId, password, age } = req.body;
+            // Validation of Data
+            await validateSignupData(req);
+            // console.log("hi")
+
+            const { firstName, lastName, emailId, password, age,
+                    gender, photoUrl, about, skills } = req.body;
             
-            // CASE 1: Basic Validation Error
-            if (!firstName || !emailId || !password || !age) {
-                // const err = new Error("Please provide all required fields");
-                // err.statusCode = 400;
-                // throw err;
-
-                throw new AppError("Please provide all required fields", 400);
-            }
-
-            // CASE 2: Business Logic Error (Password length)
-            if (password.length < 8) {
-                throw new AppError("Password must be at least 8 characters long", 400);
-            }
-
-            // CASE 3: Duplicacy Check (Kya email pehle se database mein hai?)
-            const existingUser = await UserModel.findOne({ emailId: emailId });
-            if (existingUser) {
-                throw new AppError("This email is already registered. Please signup via different email.", 400);
-            }
+            // Password Encryption
+            const passwordHash = await bcrypt.hash(password, 10);
 
             // Agar upar ki saari conditions paas ho gayi, matlab data ekdum sahi hai
             // Ab hum user ko save karenge
             const user = new UserModel({
-                firstName, lastName, emailId, password, age
+                firstName, 
+                lastName, 
+                emailId, 
+                password : passwordHash, 
+                gender,
+                age,
+                photoUrl,
+                about,
+                skills
             })
             await user.save(); // save in database collection
-
-            const userDocument = await UserModel.findOne({emailId: emailId}); //returns document/json object
-            const userId = userDocument._id.toString(); //need to convert _id into string using .toString();
-            console.log(userId);
+            
+            // console.log("saved the data");
+            // const userDocument = await UserModel.findOne({emailId: req.body.emailId}); //returns document/json object
+            // const userId = userDocument._id.toString(); //need to convert _id into string using .toString();
+            // console.log(userId);
             // 201 status ka matlab hota hai "Created Successfully"
             res.status(201).send({
                 message: "User signed up successfully",
-                data: { firstName, lastName, emailId, age, userId }
+                success: true
+                // data: { ...req.body, userId }
             });
         } catch(error){
             // res.status(400).send("Error saving the user: ", error);
@@ -220,8 +219,8 @@ connectDB()
         // }
 
         // err.statusCode and err.message from coming from the AppError.js
-        console.log("custom errorStatusCode", err.statusCode);
-        console.log("custom errorMessage", err.message);
+        // console.log("custom errorStatusCode", err.statusCode);
+        // console.log("custom errorMessage", err.message);
         const statusCode = err.statusCode || 500;
         const errorMessage = err.message || "Internal Server Error";
 
