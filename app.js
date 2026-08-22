@@ -154,18 +154,23 @@ connectDB()
     // PUT (Total Replacement) vs PATCH (Partial Update)
     // Patch User API - update data of the user
     app.patch("/user", async(req,res,next)=>{
-        const userId = req.body.userId;
-        const emailId = req.body.emailId;
+        const userId = req.query?.userId;
+        const emailId = req.query?.emailId;
         const data = req.body;
+        if(data.password || data.firstName || data.lastName || data.emailId){
+            // delete data.password || data['password']
+            // console.log('deleted password')
+            throw new AppError("Update not allowed!",400)
+        }
         try{
             if(userId){
                 // const user = await UserModel.findByIdAndUpdate({_id: userId}, data);
-                const user = await UserModel.findByIdAndUpdate(userId, data);
+                const user = await UserModel.findByIdAndUpdate(userId, data, {runValidators:true, returnDocument:'after'});
                 if(!user) throw new AppError("Enter valid userId",400);
                 
                 res.send("User updated successfully via userId");
             } else if (!userId && emailId) {
-                const user = await UserModel.findOneAndUpdate({emailId: emailId}, data);
+                const user = await UserModel.findOneAndUpdate({emailId: emailId}, data, {runValidators:true, returnDocument:'after'});
                 if(!user) throw new AppError("Enter valid emailId",400);
                 
                 res.send("User updated successfully via email");
