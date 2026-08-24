@@ -7,6 +7,8 @@ const { UserModel } = require("./src/models/user");
 const {AppError} = require("./src/utils/AppError");
 const {validateSignupData, validateLoginData} = require("./src/utils/validation");
 const bcrypt = require("bcrypt");
+const cookieParser = require('cookie-parser');
+const jwt = require("jsonwebtoken");
 
 const app = express();
 
@@ -20,15 +22,18 @@ connectDB()
     console.log("Database connection established.")
     // Ye line add karni hai routes se upar!
     // Ye Postman se aane wale JSON data ko read karke req.body mein daal deti hai
-    // Raw JSON ko parse karega
+    // Body Raw JSON ko parse karega
     app.use(express.json()); 
 
-    // x-www-form-urlencoded ko parse karega
+    // Body x-www-form-urlencoded ko parse karega
     app.use(express.urlencoded({ extended: true }));
+
+    // Stored cookie ko parse krega saari APIs aur unke middlewares me
+    app.use(cookieParser());
 
 
     // SignUp API
-    app.post("/signup",async(req,res,next)=>{
+    app.post("/user/signup",async(req,res,next)=>{
         try{
             // Validation of Data
             await validateSignupData(req);
@@ -74,8 +79,54 @@ connectDB()
         }
     })
 
+    // Login API
+    app.post("/user/login", async (req,res,next)=>{
+        try{
+            const user = await validateLoginData(req);
+            
+            const token = jwt.sign(
+                {
+                    _id: user._id
+                },
+                process.env.DEVTINDER_JWT_SECRET_KEY,
+                {
+                    expiresIn: "0d"
+                }
+            );
+
+            res.cookie("token", token, {
+                expires: new Date(Date.now() + 8 * 3600000) // expires in 8 hours
+            });
+            res.send({
+                message: "user logged in successfully",
+                token: token,
+                success: true,
+                data: user
+            })
+        } catch(error){
+            next(error);
+        }
+        
+    })
+
+    // Applying Auth on all "/user" routes
+    app.use("/user", userAuth);
+
+
+    
+    app.get("/user/profile", (req,res)=>{
+        try{
+            const user = req.user.toObject();
+
+            delete user.password;
+            res.send(user);
+        } catch(error){
+            next(error)
+        }
+    });
+
     // Feed API - Get /feed - get all users from the database
-    app.get("/feed", async(req,res,next)=>{
+    app.get("/user/feed", async(req,res,next)=>{
         try{
             const users = await UserModel.find({})
             if(users.length === 0){
@@ -91,68 +142,22 @@ connectDB()
             next(error);
         }
     })
-    
-    app.use("/admin", adminAuth);
 
-    app.get("/admin/getAllAdmins",(req,res)=>{
-        console.log("getAllAdmins function called");
-        res.send("list of all the admins")
-    });
+    // // Get user by email
+    // app.get("/user", async(req,res,next)=>{
+    //     try{
+    //         const user = await UserModel.findOne({emailId: req.query.emailId})
+    //         if(!user){
+    //             throw new AppError("User not found",404);
+    //         }
 
-    app.delete("/admin/deleteAdmin",(req,res)=>{
-        console.log("deleteAdmin function called");
-        res.send("deleted the admin successfully")
-    });
-
-
-    app.post("/user/login", async (req,res,next)=>{
-        try{
-            // console.log("user login api called");
-            // throw new Error("DB Server Down")
-
-            const user = await validateLoginData(req);
-            // console.log("user in api", user);
-
-            // compare hashPassword with plainPassword
-            const isPasswordMatch = await bcrypt.compare(req.body.password, user.password)
-            // console.log("isPasswordMatch", isPasswordMatch)
-
-            if(isPasswordMatch){
-                const userData = user.toObject();
-                delete userData.password;
-                // console.log("after delete", userData)
-                res.send({
-                    message: "user logged in successfully",
-                    token: "userBearerToken",
-                    success: true,
-                    data: userData
-                })
-            }else{
-                throw new AppError("Invalid Credentials!!", 400)
-            }
-        } catch(error){
-            next(error);
-        }
-        
-    })
-
-    app.use("/user", userAuth);
-
-    // Get user by email
-    app.get("/user", async(req,res,next)=>{
-        try{
-            const user = await UserModel.findOne({emailId: req.query.emailId})
-            if(!user){
-                throw new AppError("User not found",404);
-            }
-
-            // we can add multiple business logics like
-            // logged in user cannot see his/her user details in the feed
-            res.send(user);
-        } catch (error) {
-            next(error);
-        }
-    });
+    //         // we can add multiple business logics like
+    //         // logged in user cannot see his/her user details in the feed
+    //         res.send(user);
+    //     } catch (error) {
+    //         next(error);
+    //     }
+    // });
 
     // Delete User API
     app.delete("/user", async(req,res,next)=>{
@@ -170,15 +175,15 @@ connectDB()
     // PUT (Total Replacement) vs PATCH (Partial Update)
     // Patch User API - update data of the user
     app.patch("/user", async(req,res,next)=>{
-        const userId = req.query?.userId;
-        const emailId = req.query?.emailId;
-        const data = req.body;
-        if(data.password || data.firstName || data.lastName || data.emailId){
-            // delete data.password || data['password']
-            // console.log('deleted password')
-            throw new AppError("Update not allowed!",400)
-        }
         try{
+            const userId = req.query?.userId;
+            const emailId = req.query?.emailId;
+            const data = req.body;
+            if(data.password || data.firstName || data.lastName || data.emailId){
+                // delete data.password || data['password']
+                // console.log('deleted password')
+                throw new AppError("Update not allowed!",400)
+            }
             if(userId){
                 // const user = await UserModel.findByIdAndUpdate({_id: userId}, data);
                 const user = await UserModel.findByIdAndUpdate(userId, data, {runValidators:true, returnDocument:'after'});
@@ -198,21 +203,9 @@ connectDB()
         }
     });
 
-    app.get("/user/profile", (req,res)=>{
-        console.log("user profile api called")
-        res.send("fetch user profile data")
-    });
 
-    app.get("/user/settings", (req,res)=>{
-        console.log("user settings api called")
-        res.send("fetch user settings")
-    });
-
-    app.delete("/user/delete", (req,res)=>{
-        console.log("user delete api called")
-        res.send("deleted the user successfully")
-    });
-
+    // Applying Auth on all "/admin" routes
+    app.use("/admin", adminAuth);
 
     //Global Error Handler
     app.use((err,req,res,next)=>{
@@ -220,20 +213,31 @@ connectDB()
         //     res.status(500).send("Something Went Wrong");
         // }
 
-        // 1. Agar ye Mongoose ka Validation Error hai
+        // --- Mongoose Errors --- Agar ye Mongoose ka Validation Error hai
         if (err.name === "ValidationError") {
             err.statusCode = 400; // Hum khud yahan 400 set kar denge
             
-            // Bonus: Mongoose ke lambe message ("user validation failed...") ko clean karna
+            // Mongoose ke lambe message ("user validation failed...") ko clean karna
             const messages = Object.values(err.errors).map(val => val.message);
             err.message = messages.join(", "); 
         }
+        
+        // --- Mongoose Errors --- Agar ye duplicate key (email already exists) ka error hai
+        if (err.code === 11000) {
+            err.statusCode = 400;
+            err.message = "This email is already registered!";
+        }
 
-        // // 2. Agar ye duplicate key (email already exists) ka error hai
-        // if (err.code === 11000) {
-        //     err.statusCode = 400;
-        //     err.message = "This email is already registered!";
-        // }
+        // --- JWT Errors (New Logic) ---
+        if (err.name === "TokenExpiredError") {
+            err.statusCode = 401;
+            err.message = "Session expired! Please login again.";
+        }
+        if (err.name === "JsonWebTokenError") {
+            err.statusCode = 401;
+            err.message = "Invalid Token! Unauthorized access.";
+        }
+
 
         // err.statusCode and err.message from coming from the AppError.js
         // console.log("custom errorStatusCode", err.statusCode);
