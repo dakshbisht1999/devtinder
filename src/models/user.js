@@ -2,8 +2,10 @@ const mongoose = require("mongoose");
 const { AppError } = require("../utils/AppError");
 // const {Schema} = mongoose;
 const validator = require("validator");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
 
-const userSchema = mongoose.Schema({
+const userSchema = new mongoose.Schema({
     firstName:{
         type: String,
         required: true,
@@ -84,8 +86,31 @@ const userSchema = mongoose.Schema({
     timestamps: true // automatically adds createdAt and updatedAt fields to every new User.
 });
 
+userSchema.methods.getJWT = async function() {
+    const user = this;
+
+    const token = await jwt.sign(
+        {
+            _id: user._id
+        },
+        process.env.DEVTINDER_JWT_SECRET_KEY,
+        {
+            expiresIn: "8h"
+        }
+    );
+
+    return token;
+};
+
+userSchema.methods.validatePassword = async function (plainPassword){
+    const user = this;
+    const isPasswordMatch = await bcrypt.compare(plainPassword, user.password);
+    if(!isPasswordMatch) throw new AppError("Invalid Credentials!!", 401);
+};
+
 // here we attach userSchema to the Collection of Database
 // 's' as postfix in db automatically, user -> users
 const UserModel = mongoose.model("user", userSchema);
+
 
 module.exports = {UserModel}

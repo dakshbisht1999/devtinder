@@ -83,25 +83,21 @@ connectDB()
     app.post("/user/login", async (req,res,next)=>{
         try{
             const user = await validateLoginData(req);
+            await user.validatePassword(req.body.password);
             
-            const token = jwt.sign(
-                {
-                    _id: user._id
-                },
-                process.env.DEVTINDER_JWT_SECRET_KEY,
-                {
-                    expiresIn: "0d"
-                }
-            );
-
+            const token = await user.getJWT();
+            
             res.cookie("token", token, {
-                expires: new Date(Date.now() + 8 * 3600000) // expires in 8 hours
+                expires: new Date(Date.now() + 8 * 3600000), // expires in 8 hours
+                httpOnly: true
             });
+            const userObj = user.toObject();
+            delete userObj.password;
             res.send({
                 message: "user logged in successfully",
                 token: token,
                 success: true,
-                data: user
+                data: userObj
             })
         } catch(error){
             next(error);
@@ -255,6 +251,7 @@ connectDB()
         console.log("Server running on port:7777");
     });
 }).catch((err)=>{
-    console.error("Database cannot be connected!!")
+    // console.log(err);
+    console.error("Database cannot be connected!!", err);
 })
 

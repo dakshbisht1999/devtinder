@@ -36,13 +36,13 @@ const validateLoginData = async (req) => {
     const user = await UserModel.findOne({emailId:emailId});
     if(!user) throw new AppError("Invalid Credentials!",401);
 
-    // fetch the hashPassword and compare with plainPassword
-    const isPasswordMatch = await bcrypt.compare(password, user.password);
-    if(!isPasswordMatch) throw new AppError("Invalid Credentials!!", 401)
+    // // fetch the hashPassword and compare with plainPassword
+    // const isPasswordMatch = await bcrypt.compare(password, user.password);
+    // if(!isPasswordMatch) throw new AppError("Invalid Credentials!!", 401);
         
-    const userObj = user.toObject();
-    delete userObj.password;
-    return userObj;
+    // const userObj = user.toObject();
+    // delete userObj.password;
+    return user;
 }
 
 module.exports = {validateSignupData, validateLoginData}

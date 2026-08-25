@@ -23,7 +23,7 @@ const adminAuth = (req, res, next) => {
 const userAuth = async (req, res, next) => {
     try{
         // Actual JWT Token Authorization
-        // Read the token from the req cookies
+        // Read the token from the req cookies using cookie-parser
         const {token} = req.cookies; // token sent via cookie 
         if(!token) throw new AppError("Unauthorized user!",401);
 
