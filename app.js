@@ -1,23 +1,26 @@
 // console.log("Hello, World!");
 
 const express = require("express");
-const {adminAuth, userAuth} = require("./src/middlewares/auth")
 const {connectDB} = require("./src/config/database");
+const {adminAuth, userAuth} = require("./src/middlewares/auth");
 const { UserModel } = require("./src/models/user");
 const {AppError} = require("./src/utils/AppError");
 const {validateSignupData, validateLoginData} = require("./src/utils/validation");
 const bcrypt = require("bcrypt");
 const cookieParser = require('cookie-parser');
 const jwt = require("jsonwebtoken");
+const { authRouter } = require("./src/routes/v1/authRouter");
+const { profileRouter } = require("./src/routes/v1/profileRouter");
+const { requestRouter } = require("./src/routes/v1/requestRouter");
+const { userRouter } = require("./src/routes/v1/userRouter");
 
 const app = express();
-
-//To connect single db only
-connectDB()
 
 //To connect multiple dbs
 // Promise.all([mainDB.asPromise(), adminDB.asPromise()])
 
+//To connect single db only
+connectDB()
 .then(()=>{
     console.log("Database connection established.")
     // Ye line add karni hai routes se upar!
@@ -32,94 +35,12 @@ connectDB()
     app.use(cookieParser());
 
 
-    // SignUp API
-    app.post("/user/signup",async(req,res,next)=>{
-        try{
-            // Validation of Data
-            await validateSignupData(req);
-            // console.log("hi")
-
-            const { firstName, lastName, emailId, password, age,
-                    gender, photoUrl, about, skills } = req.body;
-            
-            // Password Encryption
-            const passwordHash = await bcrypt.hash(password, 10);
-
-            // Agar upar ki saari conditions paas ho gayi, matlab data ekdum sahi hai
-            // Ab hum user ko save karenge
-            const user = new UserModel({
-                firstName, 
-                lastName, 
-                emailId, 
-                password : passwordHash, 
-                gender,
-                age,
-                photoUrl,
-                about,
-                skills
-            })
-            await user.save(); // save in database collection
-            
-            // console.log("saved the data");
-            // const userDocument = await UserModel.findOne({emailId: req.body.emailId}); //returns document/json object
-            // const userId = userDocument._id.toString(); //need to convert _id into string using .toString();
-            // console.log(userId);
-            // 201 status ka matlab hota hai "Created Successfully"
-            res.status(201).send({
-                message: "User signed up successfully",
-                success: true
-                // data: { ...req.body, userId }
-            });
-        } catch(error){
-            // res.status(400).send("Error saving the user: ", error);
-            
-            // Agar upar wale throw chalenge, ya database crash hoga, 
-            // toh wo sab yahan aayenge aur Global Handler ke paas chale jayenge
-            next(error);
-        }
-    })
-
-    // Login API
-    app.post("/user/login", async (req,res,next)=>{
-        try{
-            const user = await validateLoginData(req);
-            await user.validatePassword(req.body.password);
-            
-            const token = await user.getJWT();
-            
-            res.cookie("token", token, {
-                expires: new Date(Date.now() + 8 * 3600000), // expires in 8 hours
-                httpOnly: true
-            });
-            const userObj = user.toObject();
-            delete userObj.password;
-            res.send({
-                message: "user logged in successfully",
-                token: token,
-                success: true,
-                data: userObj
-            })
-        } catch(error){
-            next(error);
-        }
-        
-    })
-
-    // Applying Auth on all "/user" routes
-    app.use("/user", userAuth);
+    app.use("/api/v1/auth", authRouter);
+    app.use("/api/v1/profile", userAuth, profileRouter);
+    app.use("/api/v1/request", userAuth, requestRouter);
+    app.use("/api/v1/user", userAuth, userRouter);
 
 
-    
-    app.get("/user/profile", (req,res)=>{
-        try{
-            const user = req.user.toObject();
-
-            delete user.password;
-            res.send(user);
-        } catch(error){
-            next(error)
-        }
-    });
 
     // Feed API - Get /feed - get all users from the database
     app.get("/user/feed", async(req,res,next)=>{
@@ -139,65 +60,8 @@ connectDB()
         }
     })
 
-    // // Get user by email
-    // app.get("/user", async(req,res,next)=>{
-    //     try{
-    //         const user = await UserModel.findOne({emailId: req.query.emailId})
-    //         if(!user){
-    //             throw new AppError("User not found",404);
-    //         }
+    
 
-    //         // we can add multiple business logics like
-    //         // logged in user cannot see his/her user details in the feed
-    //         res.send(user);
-    //     } catch (error) {
-    //         next(error);
-    //     }
-    // });
-
-    // Delete User API
-    app.delete("/user", async(req,res,next)=>{
-        const userId = req.body.userId;
-        try{
-            const user = await UserModel.findByIdAndDelete(userId);
-            if(!user) throw new AppError("Enter valid userId",400)
-            
-            res.send("User deleted successfully");
-        } catch (error){
-            next(error);
-        }
-    });
-
-    // PUT (Total Replacement) vs PATCH (Partial Update)
-    // Patch User API - update data of the user
-    app.patch("/user", async(req,res,next)=>{
-        try{
-            const userId = req.query?.userId;
-            const emailId = req.query?.emailId;
-            const data = req.body;
-            if(data.password || data.firstName || data.lastName || data.emailId){
-                // delete data.password || data['password']
-                // console.log('deleted password')
-                throw new AppError("Update not allowed!",400)
-            }
-            if(userId){
-                // const user = await UserModel.findByIdAndUpdate({_id: userId}, data);
-                const user = await UserModel.findByIdAndUpdate(userId, data, {runValidators:true, returnDocument:'after'});
-                if(!user) throw new AppError("Enter valid userId",400);
-                
-                res.send("User updated successfully via userId");
-            } else if (!userId && emailId) {
-                const user = await UserModel.findOneAndUpdate({emailId: emailId}, data, {runValidators:true, returnDocument:'after'});
-                if(!user) throw new AppError("Enter valid emailId",400);
-                
-                res.send("User updated successfully via email");
-            } else {
-                throw new AppError("Enter either userId or emailId to update the user.", 400);
-            }
-        } catch (error){
-            next(error);
-        }
-    });
 
 
     // Applying Auth on all "/admin" routes
