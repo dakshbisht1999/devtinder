@@ -41,32 +41,12 @@ connectDB()
     app.use("/api/v1/user", userAuth, userRouter);
 
 
-
-    // Feed API - Get /feed - get all users from the database
-    app.get("/user/feed", async(req,res,next)=>{
-        try{
-            const users = await UserModel.find({})
-            if(users.length === 0){
-                throw new AppError("No users found",404);
-            }
-
-            // we can add multiple business logics like
-            // logged in user cannot see his/her user details in the feed
-            // also use pagination/scroll feature in the api
-            // in case of more than 100 records/documents in the db
-            res.send(users);
-        } catch (error) {
-            next(error);
-        }
-    })
-
-    
-
-
-
     // Applying Auth on all "/admin" routes
     app.use("/admin", adminAuth);
 
+
+
+    
     //Global Error Handler
     app.use((err,req,res,next)=>{
         // if(err){

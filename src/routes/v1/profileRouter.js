@@ -75,6 +75,10 @@ profileRouter.patch("/password", async(req,res,next)=>{
         const isUpdated = await UserModel.findByIdAndUpdate(userId, {password:encryptedPassword}, {runValidators:true, returnDocument:'after'});
         if(!isUpdated) throw new AppError("Unable to update password!",400);
 
+        // logout from every other devices for security purposes 
+        // or if correct - then validate the password everytime with api call using auth
+        // or create a passwordUpdatedAt key along with each user in the database, and update the key everytime when the user changes the password
+          // and verify the passwordUpdatedAt time and JWT iat time, so that if the JWT is older than the passwordUpdatedAt then need to login again.
         res.send({
             message: "Password changed successfully",
             success: true

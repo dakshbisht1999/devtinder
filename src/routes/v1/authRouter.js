@@ -87,8 +87,11 @@ authRouter.post("/logout", userAuth, async (req,res,next)=>{
     try{
         console.log(req.user);
 
-        // Expire the jwt token
-
+        // 1st step
+        // Expire the jwt token using redis blacklist db,
+        // or token versioning in user document and jwt payload.
+        
+        // 2nd step
         res.clearCookie("token");
         res.send({
             message: "User logged out successfully",
