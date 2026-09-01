@@ -123,3 +123,27 @@
     - Create PATCH /profile/edit
     - Create PATCH /profile/password API => forgot password API
     - Make you validate all data in every POST, PATCH apis
+
+
+
+12. Logical DB Query & Compound Indexes
+ - Create Connnection Request Schema
+ - Send Connection Request API
+ - Proper validation of Data
+ - Think about ALL corner cases
+ - $or query $and query in mongoose - https://www.mongodb.com/docs/manual/reference/operator/query-logical/
+ - schema.pre("save") function
+ - Read more about indexes in MongoDB
+ - Why do we need index in DB?
+ - What is the advantages and disadvantage of creating?
+ - Read this arcticle about compond indexes - https://www.mongodb.com/docs/manual/core/indexes/index-types/index-compound/
+ - ALWAYS THINK ABOUT CORNER CASES 
+
+
+
+13. ref, Populate & Thought process of writing APIs
+ - Write code with proper validations for POST /request/review/:status/:requestId
+ - Thought process - POST vs GET 
+ - Read about ref and populate https://mongoosejs.com/docs/populate.html
+ - Create GET /user/requests/received with all the checks
+ - Create GET GET /user/connections

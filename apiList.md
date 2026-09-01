@@ -11,15 +11,15 @@ PATCH - /profile/password
 DELETE - /profile/delete
 
 
-# userRouter
-GET - /user/feed (with pagination)
-GET - /user/requests/received (with pagination)
-GET - /user/connections (with pagination)
-
-
 # requestRouter
 POST - /request/send/:status/:userId       // status: interested, ignored
 POST - /request/review/:status/:requestId  // status: accepted, rejected
+
+
+# userRouter
+GET - /user/requests/received (with pagination)
+GET - /user/connections (with pagination)
+GET - /user/feed (with pagination)
 
 
 # chatRouter [webSockets concept]
