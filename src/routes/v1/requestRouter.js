@@ -45,7 +45,36 @@ requestRouter.post("/send/:status/:toUserId", async (req, res, next)=>{
 });
 
 requestRouter.post("/review/:status/:requestId", async (req, res, next)=>{
+    try{
+        const status = req.params.status; // status: accepted, rejected
+        const requestId = req.params.requestId;
+        const toUserId = req.user._id; // loggedIn User
 
+        // validate status
+        const allowedStatuses = ["accepted", "rejected"];
+        if(!allowedStatuses.includes(status)) throw new AppError("Invalid status",400);
+
+        // check if this requestId exists in connectionRequests collection along with the status type: interested
+        // because if the requestId is valid, status type must be interested to make it accepted or rejected
+        const connectionRequest = await connectionRequestModel.findOne({
+            _id: requestId,
+            toUserId,
+            status: "interested"
+        })
+        if(!connectionRequest) throw new AppError("Connection request not found",404);
+
+        // change the status to accepted/rejected
+        connectionRequest.status = status;
+        const updatedData = await connectionRequest.save();
+
+        res.send({
+            success: true,
+            message: "Connection request "+status,
+            data: updatedData
+        })
+    } catch(error){
+        next(error);
+    }
 })
 
 
