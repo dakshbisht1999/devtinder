@@ -3,8 +3,26 @@ const userRouter = express.Router();
 
 const { UserModel } = require("./../../models/user");
 const {AppError} = require("./../../utils/AppError");
+const { connectionRequestModel } = require("../../models/connectionRequest");
 
 
+userRouter.get("/requests/received", async (req,res,next)=>{
+    try{
+        const loggedInUser = req.user;
+        const requests = await connectionRequestModel.find({
+            toUserId: loggedInUser._id,
+            status: "interested"
+        }).populate("fromUserId",["firstName", "lastName", "photoUrl", "gender", "age"]);
+
+        res.send({
+            success:true,
+            message: "Connection requests fetched successfully",
+            data: requests
+        })
+    } catch(error){
+        next(error);
+    }
+})
 
 // GET - Feed API
 userRouter.get("/feed", async(req,res,next)=>{
