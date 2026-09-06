@@ -18,7 +18,7 @@ POST - /request/review/:status/:requestId  // status: accepted, rejected
 
 # userRouter
 GET - /user/requests/received (with pagination)
-GET - /user/connections (with pagination)
+GET - /user/connections (with pagination) // status: accepted
 GET - /user/feed (with pagination)
 
 

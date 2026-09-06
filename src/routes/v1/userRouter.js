@@ -5,6 +5,7 @@ const { UserModel } = require("./../../models/user");
 const {AppError} = require("./../../utils/AppError");
 const { connectionRequestModel } = require("../../models/connectionRequest");
 
+const USER_SAFE_DATA = ["firstName", "lastName", "photoUrl", "gender", "age", "about", "skills"];
 
 userRouter.get("/requests/received", async (req,res,next)=>{
     try{
@@ -12,12 +13,116 @@ userRouter.get("/requests/received", async (req,res,next)=>{
         const requests = await connectionRequestModel.find({
             toUserId: loggedInUser._id,
             status: "interested"
-        }).populate("fromUserId",["firstName", "lastName", "photoUrl", "gender", "age"]);
+        }).populate("fromUserId",USER_SAFE_DATA);
 
         res.send({
             success:true,
             message: "Connection requests fetched successfully",
             data: requests
+        })
+    } catch(error){
+        next(error);
+    }
+})
+
+userRouter.get("/connections", async (req,res,next)=>{
+    try{
+        const loggedInUser = req.user;
+
+        // // fetch both records fromUserId and toUserId, increases the load on mongodb server
+        // // and increases the load on nodejs server to filter the response using JS map method.
+        // // suppose in case of 500 connections, it will fetch 1000 records from mongodb and then filters here in nodejs server to return only 500
+        // const connections1 = await connectionRequestModel.find({
+        //     $or: [
+        //         { toUserId: loggedInUser._id, status: "accepted" },
+        //         { fromUserId: loggedInUser._id, status: "accepted" },
+        //     ]
+        // })
+        //     .populate("fromUserId",USER_SAFE_DATA)
+        //     .populate("toUserId",USER_SAFE_DATA);
+
+        // const data = connections1.map((row)=>{
+        //     if(row.fromUserId._id.toString() === loggedInUser._id.toString()){
+        //         return row.toUserId
+        //     }
+        //     return row.fromUserId
+        // })
+
+        // using aggregation pipeline (filter all the data in mongodb server using operators and conditions in AP)
+        // reduce load on nodejs server
+        const connections2 = await connectionRequestModel.aggregate([
+            // STAGE 1: Find all accepted requests involving the logged-in user
+            {
+                $match: {
+                    status: "accepted",
+                    $or: [
+                        { toUserId: loggedInUser._id },
+                        { fromUserId: loggedInUser._id }
+                    ]
+                }
+            },
+            
+            // STAGE 2: THE MAGIC STAGE (If/Else inside the database)
+            // Create a virtual field called 'friendId'
+            {
+                $addFields: {
+                    friendId: {
+                        $cond: {
+                            // IF fromUserId == logged-in user...
+                            if: { $eq: ["$fromUserId", loggedInUser._id] }, 
+                            // THEN the friend is toUserId
+                            then: "$toUserId", 
+                            // ELSE the friend is fromUserId
+                            else: "$fromUserId" 
+                        }
+                    }
+                }
+            },
+            
+            // STAGE 3: Join the Users collection using our new dynamic 'friendId'
+            {
+                $lookup: {
+                    from: "users",          // The actual MongoDB collection name
+                    localField: "friendId", // The dynamic field we just created
+                    foreignField: "_id",    // Match it to the User's _id
+                    as: "friendProfile"     // Store the result in this array
+                }
+            },
+            
+            // STAGE 4: $lookup returns an array. $unwind turns it into a normal object.
+            {
+                $unwind: "$friendProfile"
+            },
+            
+            // STAGE 5: Clean up the final output to send to the Angular frontend
+            {
+                $project: {
+                    // Only send exactly what the frontend needs
+                    // _id: "$friendProfile._id",
+                    // firstName: "$friendProfile.firstName",
+                    // lastName: "$friendProfile.lastName",
+                    // photoUrl: "$friendProfile.photoUrl"
+
+                    // Send everything except password field
+                    fromUserId: 0,
+                    toUserId: 0,
+                    status: 0,
+                    createdAt: 0,
+                    __v: 0,
+                    friendProfile: {
+                        password: 0,
+                        createdAt: 0,
+                        updatedAt: 0,
+                        __v: 0
+                    }
+                }
+            }
+        ])
+
+        res.send({
+            success:true,
+            message: "Connection requests fetched successfully",
+            data: connections2
         })
     } catch(error){
         next(error);
