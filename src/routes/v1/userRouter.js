@@ -179,7 +179,7 @@ userRouter.get("/feed", async(req,res,next)=>{
                 {_id: {$nin: Array.from(hideUserFromFeed)}},
                 {_id: { $ne: loggedInUser._id }} // load all profiles except logged in
             ]
-        }, {password:0, __v:0})
+        }, {password:0, __v:0, createdAt:0, updatedAt:0})
             .select(USER_SAFE_DATA)
             .skip(skip) //skip documents for next pages 
             .limit(limit); //limit documents per page
