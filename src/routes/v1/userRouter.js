@@ -10,10 +10,19 @@ const USER_SAFE_DATA = ["firstName", "lastName", "photoUrl", "gender", "age", "a
 userRouter.get("/requests/received", async (req,res,next)=>{
     try{
         const loggedInUser = req.user;
+
+        //pagination work
+        const page = parseInt(req.query?.page) || 1;
+        let limit = parseInt(req.query?.limit) || 10;
+        limit = limit>50 ? 50 : limit;
+        const skip = (page-1)*limit;
+
         const requests = await connectionRequestModel.find({
             toUserId: loggedInUser._id,
             status: "interested"
-        }).populate("fromUserId",USER_SAFE_DATA);
+        }).populate("fromUserId",USER_SAFE_DATA)
+            .skip(skip) //skip documents for next pages 
+            .limit(limit); //limit documents per page
 
         res.send({
             success:true,
@@ -28,6 +37,12 @@ userRouter.get("/requests/received", async (req,res,next)=>{
 userRouter.get("/connections", async (req,res,next)=>{
     try{
         const loggedInUser = req.user;
+
+        //pagination work
+        const page = parseInt(req.query?.page) || 1;
+        let limit = parseInt(req.query?.limit) || 10;
+        limit = limit>50 ? 50 : limit;
+        const skip = (page-1)*limit;
 
         // // fetch both records fromUserId and toUserId, increases the load on mongodb server
         // // and increases the load on nodejs server to filter the response using JS map method.
@@ -116,7 +131,11 @@ userRouter.get("/connections", async (req,res,next)=>{
                         __v: 0
                     }
                 }
-            }
+            },
+
+            // STAGE 6: Pagination work
+            { $skip: skip },
+            { $limit: limit }
         ])
 
         res.send({
