@@ -132,10 +132,39 @@ userRouter.get("/connections", async (req,res,next)=>{
 // GET - Feed API
 userRouter.get("/feed", async(req,res,next)=>{
     try{
-        const loggedInUser = req.user.toObject();
+        const loggedInUser = req.user;
+
+        //pagination work
+        const page = parseInt(req.query?.page) || 1;
+        let limit = parseInt(req.query?.limit) || 10;
+        limit = limit>50 ? 50 : limit;
+        const skip = (page-1)*limit;
+
+        const connectionRequests = await connectionRequestModel.find({
+            $or:[
+                {fromUserId: loggedInUser._id},
+                {toUserId: loggedInUser._id}
+            ]
+        }).select("fromUserId toUserId");
+
+        const hideUserFromFeed = new Set();
+        connectionRequests.forEach((req)=>{
+            hideUserFromFeed.add(req.fromUserId.toString());
+            hideUserFromFeed.add(req.toUserId.toString());
+        });
+        // console.log(hideUserFromFeed)
+
+
         const users = await UserModel.find({
-            _id: { $ne: loggedInUser._id } // load all profiles except logged in
-        }, {password:0, __v:0});
+            $and: [
+                {_id: {$nin: Array.from(hideUserFromFeed)}},
+                {_id: { $ne: loggedInUser._id }} // load all profiles except logged in
+            ]
+        }, {password:0, __v:0})
+            .select(USER_SAFE_DATA)
+            .skip(skip) //skip documents for next pages 
+            .limit(limit); //limit documents per page
+        
         if(users.length === 0){
             throw new AppError("No users found",404);
         }

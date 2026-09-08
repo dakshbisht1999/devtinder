@@ -127,23 +127,44 @@
 
 
 12. Logical DB Query & Compound Indexes
- - Create Connnection Request Schema
- - Send Connection Request API
- - Proper validation of Data
- - Think about ALL corner cases
- - $or query $and query in mongoose - https://www.mongodb.com/docs/manual/reference/operator/query-logical/
- - schema.pre("save") function
- - Read more about indexes in MongoDB
- - Why do we need index in DB?
- - What is the advantages and disadvantage of creating?
- - Read this arcticle about compond indexes - https://www.mongodb.com/docs/manual/core/indexes/index-types/index-compound/
- - ALWAYS THINK ABOUT CORNER CASES 
+    - Create Connnection Request Schema
+    - Send Connection Request API
+    - Proper validation of Data
+    - Think about ALL corner cases
+    - $or query $and query in mongoose - https://www.mongodb.com/docs/manual/reference/operator/query-logical/
+    - schema.pre("save") function
+    - Read more about indexes in MongoDB
+    - Why do we need index in DB?
+    - What is the advantages and disadvantage of creating?
+    - Read this arcticle about compond indexes - https://www.mongodb.com/docs/manual/core/indexes/index-types/index-compound/
+    - ALWAYS THINK ABOUT CORNER CASES 
 
 
 
 13. ref, Populate & Thought process of writing APIs
- - Write code with proper validations for POST /request/review/:status/:requestId
- - Thought process - POST vs GET 
- - Read about ref and populate https://mongoosejs.com/docs/populate.html
- - Create GET /user/requests/received with all the checks
- - Create GET GET /user/connections
+    - Write code with proper validations for POST /request/review/:status/:requestId
+    - Thought process - POST vs GET 
+    - Read about ref and populate https://mongoosejs.com/docs/populate.html
+    - Create GET /user/requests/received with all the checks
+    - Create GET GET /user/connections
+
+
+
+14. Building Feed API & Pagination
+    - Logic for GET /feed API
+    - Explore the $nin , $and, $ne and other query operators (queries: comparison, logical, element, evaluation, geospatial, array, bitwise)
+    - Pagination
+
+
+
+NOTES: 
+
+/feed?page=1&limit=10 => 1-10 => .skip(0) & .limit(10)
+
+/feed?page=2&limit=10 => 11-20 => .skip(10) & .limit(10)
+
+/feed?page=3&limit=10 => 21-30 => .skip(20) & .limit(10)
+
+/feed?page=4&limit=10 => 21-30 => .skip(20) & .limit(10)
+
+skip = (page-1)*limit;
