@@ -3,16 +3,13 @@
 const express = require("express");
 const {connectDB} = require("./src/config/database");
 const {adminAuth, userAuth} = require("./src/middlewares/auth");
-const { UserModel } = require("./src/models/user");
-const {AppError} = require("./src/utils/AppError");
-const {validateSignupData, validateLoginData} = require("./src/utils/validation");
-const bcrypt = require("bcrypt");
 const cookieParser = require('cookie-parser');
-const jwt = require("jsonwebtoken");
 const { authRouter } = require("./src/routes/v1/authRouter");
 const { profileRouter } = require("./src/routes/v1/profileRouter");
 const { requestRouter } = require("./src/routes/v1/requestRouter");
 const { userRouter } = require("./src/routes/v1/userRouter");
+require("dotenv").config();
+const cors = require("cors");
 
 const app = express();
 
@@ -23,6 +20,36 @@ const app = express();
 connectDB()
 .then(()=>{
     console.log("Database connection established.")
+
+    // Using cors from npm to handle cors error on backend
+    // app.use(cors()); // Dangerous way of handling cors
+    // Best way of handling cors error with allowed origins
+    // 1. Parse the ALLOWED_ORIGINS string into an Array
+    const allowedOrigins = process.env.ALLOWED_ORIGINS
+        ? process.env.ALLOWED_ORIGINS.split(",")
+        : ["http://localhost:5173"]; // Fallback for safety
+
+    // 2. Configure CORS Middleware
+    app.use(
+        cors({
+            origin: function (origin, callback) {
+                // Allow requests with no origin (like mobile apps, curl, or Postman)
+                if (!origin) return callback(null, true);
+
+                if (allowedOrigins.includes(origin)) {
+                    return callback(null, true);
+                } else {
+                    return callback(
+                        new Error("CORS Policy Error: This origin is not allowed!")
+                    );
+                }
+            },
+            credentials: true, // Crucial for passing HTTP-Only cookies/JWTs
+            methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+            allowedHeaders: ["Content-Type", "Authorization"]
+        })
+    );
+
     // Ye line add karni hai routes se upar!
     // Ye Postman se aane wale JSON data ko read karke req.body mein daal deti hai
     // Body Raw JSON ko parse karega

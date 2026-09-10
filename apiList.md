@@ -2,6 +2,7 @@
 POST - /auth/signup
 POST - /auth/login
 POST - /auth/logout
+PATCH - /auth/password/reset  // using otp on email
 
 
 # profileRouter
