@@ -72,7 +72,7 @@ authRouter.post("/login", async (req,res,next)=>{
         delete userObj.password;
         res.send({
             message: "User logged in successfully",
-            token: token,
+            // token: token, removed because of security reasons
             success: true,
             data: userObj
         })
