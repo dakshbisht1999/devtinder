@@ -8,7 +8,6 @@ const { authRouter } = require("./src/routes/v1/authRouter");
 const { profileRouter } = require("./src/routes/v1/profileRouter");
 const { requestRouter } = require("./src/routes/v1/requestRouter");
 const { userRouter } = require("./src/routes/v1/userRouter");
-require("dotenv").config();
 const {corsConfig} = require("./src/middlewares/cors");
 
 const app = express();
