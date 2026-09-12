@@ -37,3 +37,4 @@ whenever user do forget password, then make sure to ask him for logout from othe
 
 restrict user actively login only number of devices
 
+/user/connection/remove:userId create an api to remove connection
