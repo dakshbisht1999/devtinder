@@ -27,3 +27,13 @@ GET - /user/feed (with pagination)
 /chat/list
 /chat/:chatId
 /chat/message/sent
+
+
+Build forgert password API for already logged out user (send otp on registered email using 2 way, ask user to write the registered email and then ask for the otp sent on the mail)
+
+
+whenever user do forget password, then make sure to ask him for logout from other devices
+
+
+restrict user actively login only number of devices
+
