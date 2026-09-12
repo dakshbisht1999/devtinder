@@ -34,7 +34,7 @@ requestRouter.post("/send/:status/:toUserId", async (req, res, next)=>{
         const data = await connectionRequest.save();
 
         res.send({
-            message: status == 'interested' ? "Connection Request sent successfully to "+toUser.firstname : "You have "+status+" "+toUser.firstName,
+            message: status == 'interested' ? "Connection Request sent successfully to "+toUser.firstName : "You have "+status+" "+toUser.firstName,
             success: true,
             data
         })
